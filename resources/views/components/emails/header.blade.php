@@ -1,35 +1,41 @@
-<tr style="background-color: #ffffff">
+<tr style="background-color:#0b0f14;">
     <td>
         <center>
             <table
-                    border="0"
-                    cellpadding="0"
-                    cellspacing="0"
-                    style="
-                              box-sizing: border-box;
-                              background-size: cover;
-                              max-width: 500px;
-                              width: 100%;
-                              font-family: 'Arial', sans-serif;
-                              font-size: 14px;
-                              border-radius: 4px;
-                              margin-bottom: 28px;
-                            "
+                border="0"
+                cellpadding="0"
+                cellspacing="0"
+                width="100%"
+                style="
+                    max-width:500px;
+                    width:100%;
+                    font-family: Arial, sans-serif;
+                    border-radius:6px;
+                    background-color:#0b0f14;
+                "
             >
                 <tbody>
                 <tr>
-                    <td style="border-bottom: 1px solid #E6E7EC; padding: 16px 24px">
-                        <a href="{{$frontendUrl}}" target="_blank">
-                            <img
-                                    align="center"
-                                    alt="Pharma"
-                                    class="float-center"
-                                    width="132"
-                                    height="34"
-                                    src="{{$frontendUrl}}/images/emails/logo-main-2@2x.png"
-                                    style="display: inline-block"
-                            />
-                        </a>
+                    <td style="padding:20px 24px; border-bottom:1px solid #1f2937;">
+
+                        <table width="100%" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td align="left">
+
+                                    <!-- Logo -->
+                                    <span style="
+                                        font-size:24px;
+                                        font-weight:800;
+                                        letter-spacing:0.5px;
+                                    ">
+                                        <span style="color:#ffffff;">WTG</span>
+                                        <span style="color:#34d399;">Spain</span>
+                                    </span>
+
+                                </td>
+                            </tr>
+                        </table>
+
                     </td>
                 </tr>
                 </tbody>

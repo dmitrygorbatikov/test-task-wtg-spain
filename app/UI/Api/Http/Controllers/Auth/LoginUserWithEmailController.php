@@ -9,9 +9,8 @@ use App\UI\Api\Http\Resources\User\Me\UserItemResource;
 use App\Application\Auth\Actions\LoginUserByEmailAction;
 use App\Domains\Auth\Exceptions\InvalidLoginCredentialsException;
 use App\Domains\Auth\Exceptions\UserRegistrationUnfinishedException;
-use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\JsonResponse;
-use App\Infrastructure\Exceptions\{AccountUnavailableException, ThrottleException};
+use App\Infrastructure\Exceptions\AccountUnavailableException;
 use App\Infrastructure\Http\Controllers\Controller;
 
 class LoginUserWithEmailController extends Controller
@@ -25,13 +24,7 @@ class LoginUserWithEmailController extends Controller
         LoginUserByEmailRequest $request,
         LoginUserByEmailAction $loginAction,
     ): JsonResponse {
-        try {
-            $user = $loginAction->execute($request->email, $request->password);
-        } catch (ThrottleException $e) {
-            throw new ThrottleRequestsException(__('api::errors.too_many_requests.message', [
-                'time' => $e->getTime(),
-            ]));
-        }
+        $user = $loginAction->execute($request->email, $request->password);
 
         return response()->json([
             'token' => $user->createPlainTextToken(),

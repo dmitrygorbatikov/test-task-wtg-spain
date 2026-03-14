@@ -11,7 +11,8 @@ use Illuminate\Routing\Exceptions\InvalidSignatureException;
 use Illuminate\Validation\ValidationException;
 use App\Infrastructure\Enums\EnvironmentEnum;
 use App\Infrastructure\Exceptions\Handler as InfrastructureHandler;
-use App\Infrastructure\Exceptions\{ConflictException,
+use App\Infrastructure\Exceptions\{
+    ConflictException,
     EntityFindException,
     ExternalServiceException,
     ForbiddenException,
@@ -44,22 +45,22 @@ final class Handler extends InfrastructureHandler
     {
         if ($e instanceof InvalidSignatureException) {
             return response()->json([
-                'error' => __('api::errors.invalid_signature.code'),
-                'message' => __('api::errors.invalid_signature.message'),
+                'error' => __('api/errors.invalid_signature.code'),
+                'message' => __('api/errors.invalid_signature.message'),
             ], Response::HTTP_NOT_FOUND);
         }
 
         if ($e instanceof AuthenticationException) {
             return response()->json([
-                'error' => __('api::errors.invalid_session_token.code'),
-                'message' => __('api::errors.invalid_session_token.message'),
+                'error' => __('api/errors.invalid_session_token.code'),
+                'message' => __('api/errors.invalid_session_token.message'),
             ], Response::HTTP_UNAUTHORIZED);
         }
 
         if ($e instanceof UnauthorizedException) {
             return response()->json([
-                'error' => __('api::errors.' . $e->getErrorCode() . '.code'),
-                'message' => __('api::errors.' . $e->getErrorCode() . '.message'),
+                'error' => __('api/errors.' . $e->getErrorCode() . '.code'),
+                'message' => __('api/errors.' . $e->getErrorCode() . '.message'),
             ], Response::HTTP_UNAUTHORIZED);
         }
 
@@ -67,45 +68,44 @@ final class Handler extends InfrastructureHandler
             if (EnvironmentEnum::isLocal() || EnvironmentEnum::isTesting()) {
                 throw new RuntimeException(sprintf(
                     'Check %s::getFeaturesForGate() permission list',
-//                    SubscriptionFeatureEnum::class
-                'unknown subscription'
+                    'unknown subscription'
                 ));
             }
 
             return response()->json([
-                'error' => __('api::errors.permission_access_forbidden.code'),
-                'message' => __('api::errors.permission_access_forbidden.message'),
+                'error' => __('api/errors.permission_access_forbidden.code'),
+                'message' => __('api/errors.permission_access_forbidden.message'),
             ], Response::HTTP_FORBIDDEN);
         }
 
         if ($e instanceof ForbiddenWithEmailException) {
             return response()->json([
-                'error' => __('api::errors.' . $e->getErrorCode() . '.code'),
-                'message' => __('api::errors.' . $e->getErrorCode() . '.message'),
+                'error' => __('api/errors.' . $e->getErrorCode() . '.code'),
+                'message' => __('api/errors.' . $e->getErrorCode() . '.message'),
                 'email' => $e->getEmail(),
             ], Response::HTTP_FORBIDDEN);
         }
 
         if ($e instanceof ForbiddenWithAdditionalDataException) {
             return response()->json([
-                'error' => __("api::errors.{$e->getErrorCode()}.code"),
-                'message' => __("api::errors.{$e->getErrorCode()}.message", $e->getData()),
+                'error' => __("api/errors.{$e->getErrorCode()}.code"),
+                'message' => __("api/errors.{$e->getErrorCode()}.message", $e->getData()),
             ], Response::HTTP_FORBIDDEN);
         }
 
         if ($e instanceof ForbiddenException) {
             return response()->json([
-                'error' => __('api::errors.' . $e->getErrorCode() . '.code'),
-                'message' => __('api::errors.' . $e->getErrorCode() . '.message'),
+                'error' => __('api/errors.' . $e->getErrorCode() . '.code'),
+                'message' => __('api/errors.' . $e->getErrorCode() . '.message'),
             ], Response::HTTP_FORBIDDEN);
         }
 
         if ($e instanceof EntityFindException) {
             return response()->json([
-                'error' => __('api::errors.entity_not_found.code', [
+                'error' => __('api/errors.entity_not_found.code', [
                     'entity' => $e->getCodeName(),
                 ]),
-                'message' => __('api::errors.entity_not_found.message', [
+                'message' => __('api/errors.entity_not_found.message', [
                     'entity' => $e->getEntityName(),
                     'field' => $e->getEntityField(),
                 ]),
@@ -114,25 +114,25 @@ final class Handler extends InfrastructureHandler
 
         if ($e instanceof NotFoundHttpException) {
             return response()->json([
-                'error' => __('api::errors.method_not_found.code'),
-                'message' => __('api::errors.method_not_found.message'),
+                'error' => __('api/errors.method_not_found.code'),
+                'message' => __('api/errors.method_not_found.message'),
             ], Response::HTTP_NOT_FOUND);
         }
 
         if ($e instanceof MethodNotAllowedHttpException) {
             return response()->json([
-                'error' => __('api::errors.method_not_allowed.code'),
-                'message' => __('api::errors.method_not_allowed.message'),
+                'error' => __('api/errors.method_not_allowed.code'),
+                'message' => __('api/errors.method_not_allowed.message'),
             ], Response::HTTP_METHOD_NOT_ALLOWED);
         }
 
         if ($e instanceof ConflictException) {
             return response()->json([
-                'error' => __('api::errors.' . $e->getErrorKey() . '.code', [
+                'error' => __('api/errors.' . $e->getErrorKey() . '.code', [
                     'field' => $e->getEntityField(),
                     'entityName' => $e->getEntityName(),
                 ]),
-                'message' => __('api::errors.' . $e->getErrorKey() . '.message', [
+                'message' => __('api/errors.' . $e->getErrorKey() . '.message', [
                     'field' => $e->getEntityField(),
                     'entityName' => $e->getEntityName(),
                     'errorMessage' => $e->getErrorMessage(),
@@ -143,15 +143,15 @@ final class Handler extends InfrastructureHandler
 
         if ($e instanceof ValidationException) {
             return response()->json([
-                'error' => __('api::errors.validation_error.code'),
-                'message' => __('api::errors.validation_error.message'),
+                'error' => __('api/errors.validation_error.code'),
+                'message' => __('api/errors.validation_error.message'),
                 'errors' => $e->errors(),
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
         if ($e instanceof ThrottleRequestsException) {
             return response()->json([
-                'error' => __('api::errors.too_many_requests.code'),
+                'error' => __('api/errors.too_many_requests.code'),
                 'message' => $e->getMessage(),
             ], Response::HTTP_TOO_MANY_REQUESTS);
         }
@@ -166,8 +166,8 @@ final class Handler extends InfrastructureHandler
     protected function badGateway(ExternalServiceException $e): Response
     {
         return response()->json([
-            'error' => __("api::errors.external_services.{$e->getErrorKey()}.code"),
-            'message' => __("api::errors.external_services.{$e->getErrorKey()}.message"),
+            'error' => __("api/errors/external_services.{$e->getErrorKey()}.code"),
+            'message' => __("api/errors/external_services.{$e->getErrorKey()}.message"),
         ], Response::HTTP_BAD_GATEWAY);
     }
 }

@@ -49,13 +49,13 @@
                                 to="/login"
                                 class="text-gray-300 hover:text-emerald-400 font-medium transition-colors"
                             >
-                                Войти
+                                Увійти
                             </router-link>
                             <router-link
                                 to="/register"
                                 class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-xl font-medium transition-all shadow-md hover:shadow-lg hover:shadow-emerald-500/30"
                             >
-                                Регистрация
+                                Реєстрація
                             </router-link>
                         </div>
 

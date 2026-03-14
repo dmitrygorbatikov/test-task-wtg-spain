@@ -24,7 +24,7 @@ export const useAuthStore = defineStore('auth', {
                 const { data } = await axios.get('/api/users/me')
                 this.user = data
             } catch (e) {
-                this.logout()
+                await this.logout()
             }
         },
 
@@ -43,7 +43,7 @@ export const useAuthStore = defineStore('auth', {
                 return true
 
             } catch (e) {
-                this.error = e.response?.data?.message || 'Ошибка входа'
+                this.error = e.response?.data?.errors?.password?.[0] || e.response?.data?.message || 'Ошибка входа'
                 return false
             } finally {
                 this.loading = false
@@ -58,10 +58,15 @@ export const useAuthStore = defineStore('auth', {
                 const { data } = await axios.post('/api/code/initialize', payload)
 
                 localStorage.setItem('reg_code_identifier', data.codeIdentifier)
+                localStorage.setItem('register_email', payload.email)
 
                 return true
             } catch (e) {
-                this.error = e.response?.data?.message || 'Ошибка отправки кода'
+                console.log(e.response?.data)
+                console.log(e.response?.data?.errors)
+                console.log(e.response?.data?.errors?.password)
+                console.log(e.response?.data?.errors?.password?.[0])
+                this.error = e.response?.data?.errors?.password?.[0] || e.response?.data?.message || 'Ошибка отправки кода'
                 return false
             } finally {
                 this.loading = false
@@ -73,10 +78,12 @@ export const useAuthStore = defineStore('auth', {
             this.error = null
 
             try {
-                await axios.post('/api/code/resend-verification', {
+                const { data } = await axios.post('/api/code/resend-verification', {
                     email,
                     codePurpose: { id: 'user_finish_email_registration_with_confirmation_code' }
                 })
+
+                localStorage.setItem('reg_code_identifier', data.codeIdentifier)
 
                 return true
             } catch (e) {

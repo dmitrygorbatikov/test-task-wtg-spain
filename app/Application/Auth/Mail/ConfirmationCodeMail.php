@@ -29,7 +29,7 @@ class ConfirmationCodeMail extends BaseMail
         $email = $this->user->email;
         $code = $this->code->code;
         $frontendDomain = config('app.frontend_domain');
-        $frontendUrl = config('app.frontend_url');
+        $frontendUrl = config('app.frontend_url') . '/register';
         $year = now()->year;
 
         return $this->view('components.auth.code.registration-code', compact(

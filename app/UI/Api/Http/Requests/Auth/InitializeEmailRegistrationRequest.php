@@ -23,6 +23,11 @@ class InitializeEmailRegistrationRequest extends BaseRequest
         ];
     }
 
+    public function messages(): array
+    {
+        return $this->getPasswordValidationMessages();
+    }
+
     public function getData(): UserData
     {
         return UserData::from([

@@ -12,12 +12,12 @@ use Illuminate\Http\JsonResponse;
 use App\Infrastructure\Exceptions\EntityUpdateException;
 use App\Infrastructure\Http\Controllers\Controller;
 use App\UI\Api\Http\Requests\Auth\FinishRegistrationRequest;
+use Symfony\Component\HttpFoundation\Response;
 
 class FinishEmailRegistrationController extends Controller
 {
     /**
      * @throws AuthenticationCodeExpiredException
-     * @throws AuthenticationCodeFindException
      * @throws EntityUpdateException
      * @throws UserRegistrationAlreadyFinishedException
      */
@@ -25,7 +25,14 @@ class FinishEmailRegistrationController extends Controller
         FinishRegistrationRequest $request,
         FinishRegistrationAction $finishRegistrationAction
     ): JsonResponse {
-        $user = $finishRegistrationAction->execute($request->getData(), $request->getCodePurpose());
+        try {
+            $user = $finishRegistrationAction->execute($request->getData(), $request->getCodePurpose());
+        } catch (AuthenticationCodeFindException) {
+            return response()->json([
+                'error' => __('api/errors.validation.authentication_code_not_found.code'),
+                'message' => __('api/errors.validation.authentication_code_not_found.message'),
+            ], Response::HTTP_NOT_FOUND);
+        }
 
         return response()->json([
             'token' => $user->createPlainTextToken(),

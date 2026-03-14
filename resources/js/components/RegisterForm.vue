@@ -2,37 +2,37 @@
     <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-950 via-gray-900 to-black py-12 px-4 sm:px-6 lg:px-8">
         <div class="max-w-md w-full space-y-10 bg-gray-900/80 backdrop-blur-xl p-10 rounded-2xl border border-gray-800/50 shadow-2xl shadow-black/50">
 
-            <!-- Заголовок -->
             <div class="text-center">
                 <h2 class="text-4xl font-extrabold text-white tracking-tight">
-                    Регистрация в <span class="text-emerald-400">PharmaPro</span>
+
+                    Реєстрація в <p class="text-emerald-400">WTG Spain</p>
+                    <p v-if="success">завершена!</p>
                 </h2>
-                <p class="mt-3 text-gray-400">
-                    Создай аккаунт за 30 секунд
+                <p v-if="!success" class="mt-3 text-gray-400">
+                    Створи аккаунт за 30 секунд
                 </p>
             </div>
 
-            <!-- Этап 1: Данные пользователя -->
             <form v-if="!codeSent" @submit.prevent="sendCode" class="mt-8 space-y-6">
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-300">Имя</label>
+                        <label class="block text-sm font-medium text-gray-300">Ім'я</label>
                         <input
                             v-model="form.firstName"
                             type="text"
                             required
                             class="mt-1 block w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
-                            placeholder="Dmitry"
+                            placeholder="Введіть ім'я"
                         />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-300">Фамилия</label>
+                        <label class="block text-sm font-medium text-gray-300">Прізвище</label>
                         <input
                             v-model="form.lastName"
                             type="text"
                             required
                             class="mt-1 block w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
-                            placeholder="Gorbatikov"
+                            placeholder="Введіть прізвище"
                         />
                     </div>
                 </div>
@@ -44,46 +44,90 @@
                         type="email"
                         required
                         class="mt-1 block w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
-                        placeholder="hy6ikvto@gmail.com"
+                        placeholder="Введіть email"
                     />
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-300">Пароль</label>
-                    <input
-                        v-model="form.password"
-                        type="password"
-                        required
-                        class="mt-1 block w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
-                        placeholder="••••••••"
-                    />
+
+                    <div class="relative mt-1">
+                        <input
+                            v-model="form.password"
+                            :type="showPassword ? 'text' : 'password'"
+                            required
+                            autocomplete="current-password"
+                            class="block w-full px-4 py-3 pr-12 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
+                            placeholder="••••••••"
+                        />
+
+                        <button
+                            type="button"
+                            @click="showPassword = !showPassword"
+                            class="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-200"
+                        >
+                            <svg
+                                v-if="!showPassword"
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="w-5 h-5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7
+                          -1.274 4.057-5.064 7-9.542 7
+                          -4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+
+                            <svg
+                                v-else
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="w-5 h-5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M13.875 18.825A10.05 10.05 0 0112 19
+                          c-4.478 0-8.268-2.943-9.542-7
+                          a9.956 9.956 0 012.293-3.95M6.223 6.223
+                          A9.956 9.956 0 0112 5
+                          c4.478 0 8.268 2.943 9.542 7
+                          a9.956 9.956 0 01-4.293 5.274M15 12
+                          a3 3 0 11-6 0
+                          3 3 0 016 0zm6 6L3 3"/>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="text-sm text-gray-400">
-                    Нажимая «Зарегистрироваться», вы соглашаетесь с
-                    <a href="#" class="text-emerald-400 hover:underline">политикой конфиденциальности</a>
+                    Натиснувши «Зареєструватися», ви погоджуєтеся з
+                    <a href="#" class="text-emerald-400 hover:underline">політикою конфіденційності</a>
                 </div>
 
                 <button
                     type="submit"
-                    :disabled="loading"
+                    :disabled="authStore.loading"
                     class="w-full flex justify-center py-4 px-6 border border-transparent rounded-xl text-lg font-medium text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-all shadow-lg shadow-emerald-900/30 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    {{ loading ? 'Отправка кода...' : 'Зарегистрироваться' }}
+                    {{ authStore.loading ? 'Відправка коду...' : 'Зареєструватися' }}
                 </button>
             </form>
 
-            <!-- Этап 2: Ввод кода -->
-            <form v-else @submit.prevent="finishRegistration" class="mt-8 space-y-8">
+            <form v-if="!success && codeSent" @submit.prevent="finishRegistration" class="mt-8 space-y-8">
                 <div class="text-center">
-                    <h3 class="text-2xl font-bold text-white">Подтверждение email</h3>
+                    <h3 class="text-2xl font-bold text-white">Підтвердження email</h3>
                     <p class="mt-3 text-gray-400">
-                        Мы отправили код на <strong class="text-emerald-400">{{ form.email }}</strong>
+                        Ми відправили код на <strong class="text-emerald-400">{{ registerEmail }}</strong>
                     </p>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-300">Код из письма (6 символов)</label>
+                    <label class="block text-sm font-medium text-gray-300">Код з повідомлення</label>
                     <input
                         v-model="code"
                         type="text"
@@ -97,37 +141,35 @@
                 <div class="flex flex-col gap-4">
                     <button
                         type="submit"
-                        :disabled="loading || !code.trim()"
+                        :disabled="authStore.loading || !code.trim()"
                         class="w-full py-4 px-6 rounded-xl text-lg font-medium text-white bg-emerald-600 hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-900/30 disabled:opacity-50"
                     >
-                        {{ loading ? 'Проверка...' : 'Подтвердить' }}
+                        {{ authStore.loading ? 'Перевірка...' : 'Підтвердити' }}
                     </button>
 
                     <button
                         type="button"
                         @click="resendCode"
-                        :disabled="loading || resendCooldown"
+                        :disabled="authStore.loading || resendCooldown"
                         class="text-emerald-400 hover:text-emerald-300 text-sm transition-colors"
                     >
-                        {{ resendCooldown ? `Отправить повторно через ${resendCooldown} сек` : 'Отправить код повторно' }}
+                        {{ 'Відправити код ще раз' }}
                     </button>
                 </div>
             </form>
 
-            <!-- Ошибка -->
-            <div v-if="error" class="mt-6 p-4 bg-red-900/50 border border-red-800/50 rounded-xl text-red-300 text-center">
-                {{ error }}
+            <div v-if="authStore.error" class="mt-6 p-4 bg-red-900/50 border border-red-800/50 rounded-xl text-red-300 text-center">
+                {{ authStore.error }}
             </div>
 
-            <!-- Успех -->
             <div v-if="success" class="mt-6 p-6 bg-emerald-900/30 border border-emerald-800/50 rounded-2xl text-center">
-                <h3 class="text-2xl font-bold text-emerald-400 mb-3">Регистрация завершена!</h3>
-                <p class="text-gray-300 mb-6">Добро пожаловать в PharmaPro</p>
+                <h3 class="text-2xl font-bold text-emerald-400 mb-3">Реєстрація завершена!</h3>
+                <p class="text-gray-300 mb-6">Ласкаво просимо в WTG Spain</p>
                 <button
                     @click="goToDashboard"
                     class="inline-flex items-center px-8 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium transition-all shadow-lg shadow-emerald-900/30"
                 >
-                    Перейти в личный кабинет
+                    Перейти до особистого кабінету
                 </button>
             </div>
         </div>
@@ -136,7 +178,8 @@
 
 <script setup>
 import {onMounted, ref} from 'vue'
-import { useRouter } from 'vue-router'
+import {useRouter} from 'vue-router'
+import {useAuthStore} from "../stores/auth.js";
 
 const router = useRouter()
 
@@ -147,120 +190,42 @@ const form = ref({
     password: '',
 })
 
+const registerEmail = ref('')
+const authStore = useAuthStore()
+const showPassword = ref(false)
+
 const code = ref('')
 const codeIdentifier = ref(null)
 
-const loading = ref(false)
-const error = ref('')
 const success = ref(false)
 const codeSent = ref(false)
 const resendCooldown = ref(0)
 
-// Таймер для повторной отправки (60 сек)
-const startResendCooldown = () => {
-    resendCooldown.value = 60
-    const interval = setInterval(() => {
-        resendCooldown.value--
-        if (resendCooldown.value <= 0) clearInterval(interval)
-    }, 1000)
-}
-
 const sendCode = async () => {
-    error.value = ''
-    loading.value = true
+    const initializeResult = await authStore.registrationInitialize(form.value)
 
-    try {
-        const response = await fetch('http://localhost:8082/api/code/initialize', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                firstName: form.value.firstName,
-                lastName: form.value.lastName,
-                email: form.value.email,
-                password: form.value.password,
-            }),
-        })
-
-        if (!response.ok) {
-            const err = await response.json()
-            throw new Error(err.message || 'Ошибка отправки кода')
-        }
-
-        const data = await response.json()
-        codeIdentifier.value = data.codeIdentifier
-        localStorage.setItem('reg_code_identifier', data.codeIdentifier) // сохраняем
-
+    if(initializeResult) {
         codeSent.value = true
-        startResendCooldown()
-    } catch (err) {
-        error.value = err.message
-    } finally {
-        loading.value = false
     }
 }
 
 const resendCode = async () => {
-    if (resendCooldown.value > 0) return
+    const resendResult = await authStore.registrationResend(form.value.email)
 
-    error.value = ''
-    loading.value = true
-
-    try {
-        const response = await fetch('http://localhost:8082/api/code/resend-verification', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                email: form.value.email,
-                codePurpose: { id: 'user_finish_email_registration_with_confirmation_code' },
-            }),
-        })
-
-        if (!response.ok) throw new Error('Ошибка повторной отправки')
-
-        startResendCooldown()
-    } catch (err) {
-        error.value = err.message
-    } finally {
-        loading.value = false
+    if (resendResult) {
+        codeSent.value = true
     }
 }
 
 const finishRegistration = async () => {
-    error.value = ''
-    loading.value = true
+    const finishResult = await authStore.registrationFinish(code.value.trim())
 
-    try {
-        const response = await fetch('http://localhost:8082/api/code/finish', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                code: code.value.trim(),
-                codeIdentifier: codeIdentifier.value,
-                codePurpose: { id: 'user_finish_email_registration_with_confirmation_code' },
-            }),
-        })
-
-        if (!response.ok) {
-            const err = await response.json()
-            throw new Error(err.message || 'Неверный код')
-        }
-
-        const data = await response.json()
-
-        // Сохраняем токен
-        localStorage.setItem('auth_token', data.token)
-        localStorage.removeItem('reg_code_identifier')
-
+    if (finishResult) {
         success.value = true
 
-        // Через 2 секунды редирект
         setTimeout(() => {
-            router.push('/') // или '/profile', '/'
-        }, 2000)
-    } catch (err) {
-        error.value = err.message
-    } finally {
-        loading.value = false
+            router.push('/profile')
+        }, 2000000)
     }
 }
 
@@ -268,12 +233,12 @@ const goToDashboard = () => {
     router.push('/')
 }
 
-// При загрузке страницы — если есть сохранённый codeIdentifier и email, можно восстановить этап
 onMounted(() => {
+    registerEmail.value = localStorage.getItem('register_email') || 'email'
     const savedId = localStorage.getItem('reg_code_identifier')
     if (savedId) {
         codeIdentifier.value = savedId
-        codeSent.value = true // сразу показываем ввод кода
+        codeSent.value = true
     }
 })
 </script>

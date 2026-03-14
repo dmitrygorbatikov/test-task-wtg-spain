@@ -28,4 +28,12 @@ trait HasPasswordParameter
     {
         return $this->validated($field);
     }
+
+    public function getPasswordValidationMessages(string $field = 'password'): array
+    {
+        return [
+            "{$field}.regex" => __('api/errors.validation.password_format'),
+            "{$field}.between" => __('api/errors.validation.password_length'),
+        ];
+    }
 }

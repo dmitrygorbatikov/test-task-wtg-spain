@@ -11,41 +11,24 @@ use App\Domains\User\Enums\UserStatusEnum;
 use App\Domains\User\Exceptions\UserFindException;
 use App\Domains\User\Models\User;
 use Hash;
-use Illuminate\Support\Facades\RateLimiter;
-use App\Infrastructure\Exceptions\{AccountUnavailableException, ThrottleException};
+use App\Infrastructure\Exceptions\AccountUnavailableException;
 
-class LoginUserByEmailAction
+readonly class LoginUserByEmailAction
 {
-//    private string $rateLimitKey;
-//    private string $rateLimitConfigKey = 'auth_routes_with_email';
-//    private int $maxAttempts;
-//    private int $decayMinutes;
-
     public function __construct(
-        private readonly UserEloquent $userEloquent,
-        private readonly CheckUserAccountIsAvailableAction $checkUserAccountIsAvailableAction,
+        private UserEloquent                      $userEloquent,
+        private CheckUserAccountIsAvailableAction $checkUserAccountIsAvailableAction,
     ) {
-//        $rateLimitConfig = config("rate-limiting.api.{$this->rateLimitConfigKey}");
-//
-//        $rateLimitConfig = empty($rateLimitConfig) ? config('rate-limiting.default') : $rateLimitConfig;
-//
-//        $this->maxAttempts = Arr::get($rateLimitConfig, 'maxAttempts');
-//        $this->decayMinutes = Arr::get($rateLimitConfig, 'decayMinutes');
+
     }
 
     /**
      * @throws AccountUnavailableException
      * @throws UserRegistrationUnfinishedException
      * @throws InvalidLoginCredentialsException
-//     * @throws ThrottleException
      */
     public function execute(string $email, string $password): User
     {
-//        $this->rateLimitKey = "{$this->rateLimitConfigKey}:{$email}";
-
-//        $this->checkRateLimit();
-//        $this->hitRateLimit();
-
         try {
             $user = $this->userEloquent->getByEmail($email, ['*'], ...UserStatusEnum::except(UserStatusEnum::Draft));
         } catch (UserFindException) {
@@ -64,8 +47,6 @@ class LoginUserByEmailAction
 
         $this->checkUserAccountIsAvailableAction->execute($user);
 
-//        $this->clearRateLimit();
-
         return $user;
     }
 
@@ -75,24 +56,4 @@ class LoginUserByEmailAction
             $user->clearTokens();
         }
     }
-
-//    /**
-//     * @throws ThrottleException
-//     */
-//    private function checkRateLimit(): void
-//    {
-//        if (RateLimiter::tooManyAttempts($this->rateLimitKey, $this->maxAttempts)) {
-//            throw new ThrottleException(RateLimiter::availableIn($this->rateLimitKey));
-//        }
-//    }
-//
-//    private function clearRateLimit(): void
-//    {
-//        RateLimiter::clear($this->rateLimitKey);
-//    }
-//
-//    private function hitRateLimit(): void
-//    {
-//        RateLimiter::hit($this->rateLimitKey, $this->decayMinutes * 60);
-//    }
 }

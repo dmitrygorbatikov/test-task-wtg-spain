@@ -149,4 +149,5 @@ return [
     ])->toArray(),
 
 
+    'support_email' => env('APP_SUPPORT_EMAIL', 'support@wtg.spain'),
 ];

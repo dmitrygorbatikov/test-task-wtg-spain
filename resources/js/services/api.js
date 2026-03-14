@@ -16,12 +16,16 @@ axios.interceptors.request.use(config => {
 axios.interceptors.response.use(
     r => r,
     error => {
+        const auth = useAuthStore()
+        const originalRequest = error.config
 
-        if (error.response?.status === 401) {
-
-            const auth = useAuthStore()
+        if (error.response?.status === 401 &&
+            !originalRequest._retry &&
+            !originalRequest.url?.includes('/login') &&
+            !originalRequest.url?.includes('/register')
+        ) {
+            originalRequest._retry = true
             auth.logout()
-
             router.push('/login')
         }
 

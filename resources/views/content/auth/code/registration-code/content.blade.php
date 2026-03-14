@@ -23,12 +23,12 @@
                 <td>
                     <p
                         style="
-                                  margin: 0;
+                                  margin-top: 40px;
                                   color: #040b1c;
                                   font-size: 36px;
                                   font-weight: 700;
                                   line-height: 48px;
-                                  padding: 0 0 40px;
+                                  padding: 0 0 24px;
                                   font-family: 'Arial', sans-serif;
                                 "
                     >

@@ -46,7 +46,7 @@
                 pointer-events: none;
                 text-decoration: none !important;
               "
-            >Pharma.ua</a>
+            >WTG Spain</a>
           </p>
         </td>
       </tr>

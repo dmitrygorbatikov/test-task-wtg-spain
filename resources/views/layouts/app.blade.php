@@ -8,7 +8,6 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-gray-950 text-gray-100 min-h-screen antialiased">
-<!-- Всё теперь рендерится внутри Vue -->
 <div id="app"></div>
 </body>
 </html>
