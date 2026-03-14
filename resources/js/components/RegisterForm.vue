@@ -166,7 +166,7 @@
                 <h3 class="text-2xl font-bold text-emerald-400 mb-3">Реєстрація завершена!</h3>
                 <p class="text-gray-300 mb-6">Ласкаво просимо в WTG Spain</p>
                 <button
-                    @click="goToDashboard"
+                    @click="goToProfile"
                     class="inline-flex items-center px-8 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium transition-all shadow-lg shadow-emerald-900/30"
                 >
                     Перейти до особистого кабінету
@@ -224,13 +224,13 @@ const finishRegistration = async () => {
         success.value = true
 
         setTimeout(() => {
-            router.push('/profile')
-        }, 2000000)
+            router.push('/')
+        }, 5000)
     }
 }
 
-const goToDashboard = () => {
-    router.push('/')
+const goToProfile = () => {
+    router.push('/profile')
 }
 
 onMounted(() => {
