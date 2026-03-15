@@ -178,10 +178,7 @@
 
 <script setup>
 import {onMounted, ref} from 'vue'
-import {useRouter} from 'vue-router'
 import {useAuthStore} from "../stores/auth.js";
-
-const router = useRouter()
 
 const form = ref({
     firstName: '',
@@ -224,13 +221,13 @@ const finishRegistration = async () => {
         success.value = true
 
         setTimeout(() => {
-            router.push('/')
-        }, 5000)
+            window.location.reload()
+        }, 1000)
     }
 }
 
 const goToProfile = () => {
-    router.push('/profile')
+    window.href = '/profile'
 }
 
 onMounted(() => {

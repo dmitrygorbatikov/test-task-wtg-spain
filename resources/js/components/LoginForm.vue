@@ -105,11 +105,9 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
 const authStore = useAuthStore()
-const router = useRouter()
 
 const form = ref({
     email: '',
@@ -122,7 +120,7 @@ const handleLogin = async () => {
     const success = await authStore.login(form.value)
 
     if (success) {
-        await router.push('/')
+        window.location.reload()
     }
 }
 </script>
