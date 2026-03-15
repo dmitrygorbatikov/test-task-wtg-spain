@@ -35,6 +35,10 @@ class Chat extends Model
 
     protected array $dates = ['last_message_at'];
 
+    protected $casts = [
+        'last_message_at' => 'datetime',
+    ];
+
     public function first(): BelongsTo
     {
         return $this->belongsTo(User::class, 'first_id');

@@ -192,6 +192,7 @@
 
                     <input
                         v-model="messageInput"
+                        @keyup.enter="sendMessage"
                         placeholder="Повідомлення..."
                         class="flex-1 bg-gray-900 border border-gray-800 rounded-lg px-4 py-2 focus:outline-none focus:border-emerald-500"
                     />
@@ -276,11 +277,9 @@ function subscribeToChat(chatId) {
             const chat = chatsStore.chats[chatIndex]
 
             chat.lastMessageContent = { content: message.content }
-            console.log(message)
             chat.lastMessageAt = message.createdAt
 
             chatsStore.sortChats()
-            chatsStore.chats = [...chatsStore.chats]
         }
         else {
             try {
@@ -296,7 +295,6 @@ function subscribeToChat(chatId) {
 
                     chatsStore.chats.unshift(newChat)
                     chatsStore.sortChats()
-                    chatsStore.chats = [...chatsStore.chats]
                 }
             } catch (err) {
                 console.warn(`Error chat loading ${chat_id} for message`, err)
@@ -417,6 +415,8 @@ onMounted(async () => {
         const { chat_id, message } = e
 
         if (selectedChat.value?.id === chat_id) {
+
+            console.log(true)
             return
         }
 
@@ -427,10 +427,9 @@ onMounted(async () => {
 
             chat.unreadCount = (chat.unreadCount || 0) + 1
             chat.lastMessageContent = { content: message.content }
-            chat.lastMessageAt = message.createdAt
+            chat.lastMessageAt = message.created_at
 
             chatsStore.sortChats()
-            chatsStore.chats = [...chatsStore.chats]
         }
         else {
             try {
@@ -441,12 +440,11 @@ onMounted(async () => {
                         ...chatsStore.chat,
                         unreadCount: 1,
                         lastMessageContent: { content: message.content },
-                        lastMessageAt: message.createdAt
+                        lastMessageAt: message.created_at
                     }
 
                     chatsStore.chats.unshift(newChat)
                     chatsStore.sortChats()
-                    chatsStore.chats = [...chatsStore.chats]
                 }
             } catch (err) {
                 console.warn(`Error chat loading ${chat_id} for message`, err)

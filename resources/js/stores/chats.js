@@ -94,15 +94,9 @@ export const useChatsStore = defineStore("chats", {
 
         sortChats() {
             this.chats.sort((a, b) => {
-                const unreadA = a.unreadCount || 0
-                const unreadB = b.unreadCount || 0
 
-                if (unreadB !== unreadA) {
-                    return unreadB - unreadA
-                }
-
-                const dateA = a.lastMessageAt ? new Date(a.lastMessageAt) : new Date(0)
-                const dateB = b.lastMessageAt ? new Date(b.lastMessageAt) : new Date(0)
+                const dateA = new Date(a.lastMessageAt ?? 0)
+                const dateB = new Date(b.lastMessageAt ?? 0)
 
                 return dateB - dateA
             })

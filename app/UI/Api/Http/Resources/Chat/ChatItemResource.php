@@ -18,11 +18,11 @@ class ChatItemResource extends JsonResource
     {
 
         return [
-            'id' => $this->resource->id,
-            'first' => new UserItemResource($this->resource->first),
-            'second' => new UserItemResource($this->resource->second),
-            'lastMessageAt' => $this->resource->last_message_at,
-            'createdAt' => $this->resource->created_at,
+            'id' => $this->id,
+            'first' => new UserItemResource($this->first),
+            'second' => new UserItemResource($this->second),
+            'lastMessageAt' => $this->last_message_at,
+            'createdAt' => $this->created_at,
         ];
     }
 }
