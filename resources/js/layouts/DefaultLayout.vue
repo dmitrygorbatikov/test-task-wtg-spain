@@ -12,7 +12,7 @@
                 WTG<span class="text-emerald-400">Spain</span>
               </span>
                         </router-link>
-                        <nav class="hidden md:flex items-center gap-8">
+                        <nav v-if="isAuthenticated" class="hidden md:flex items-center gap-8">
                             <router-link
                                 v-for="(label, path) in navItems"
                                 :key="path"
@@ -60,7 +60,7 @@
                         </div>
 
 
-                        <button class="md:hidden text-white focus:outline-none" @click="mobileMenuOpen = !mobileMenuOpen">
+                        <button v-if="isAuthenticated" class="md:hidden text-white focus:outline-none" @click="mobileMenuOpen = !mobileMenuOpen">
                             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
                             </svg>
@@ -70,7 +70,7 @@
             </div>
 
             <div
-                v-if="mobileMenuOpen"
+                v-if="mobileMenuOpen && isAuthenticated"
                 class="md:hidden bg-gray-950 border-b border-gray-800 py-6 px-4 animate-fade-in"
             >
                 <div class="flex flex-col gap-6">
