@@ -139,6 +139,7 @@
                 </div>
 
                 <div class="flex flex-col gap-4">
+
                     <button
                         type="submit"
                         :disabled="authStore.loading || !code.trim()"
@@ -153,8 +154,17 @@
                         :disabled="authStore.loading || resendCooldown"
                         class="text-emerald-400 hover:text-emerald-300 text-sm transition-colors"
                     >
-                        {{ 'Відправити код ще раз' }}
+                        Відправити код ще раз
                     </button>
+
+                    <button
+                        type="button"
+                        @click="changeEmail"
+                        class="text-gray-400 hover:text-white text-sm transition-colors"
+                    >
+                        Ввести інший email
+                    </button>
+
                 </div>
             </form>
 
@@ -218,6 +228,9 @@ const finishRegistration = async () => {
     const finishResult = await authStore.registrationFinish(code.value.trim())
 
     if (finishResult) {
+        localStorage.removeItem('reg_code_identifier')
+        localStorage.removeItem('register_email')
+
         success.value = true
 
         setTimeout(() => {
@@ -225,6 +238,14 @@ const finishRegistration = async () => {
         }, 1000)
     }
 }
+
+const changeEmail = function () {
+    localStorage.removeItem('reg_code_identifier')
+    localStorage.removeItem('register_email')
+
+    window.location.reload()
+}
+
 
 const goToProfile = () => {
     window.href = '/profile'
