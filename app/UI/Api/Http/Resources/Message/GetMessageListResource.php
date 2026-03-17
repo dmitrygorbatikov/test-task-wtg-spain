@@ -22,7 +22,7 @@ class GetMessageListResource extends JsonResource
             'senderId' => $this->sender_id,
             'content' => $this->content,
             'isRead' => $this->is_read,
-            'created_at' => $this->created_at,
+            'createdAt' => $this->created_at,
         ];
     }
 }

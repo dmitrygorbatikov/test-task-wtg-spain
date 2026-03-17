@@ -161,7 +161,7 @@
                     @scroll="onScroll"
                 >
                     <div
-                        v-for="msg in messages"
+                        v-for="msg in messagesStore.messages"
                         :key="msg.id"
                         class="flex"
                         :class="msg.senderId === myId ? 'justify-end' : 'justify-start'"
@@ -181,7 +181,7 @@
                                 class="absolute bottom-1 right-2.5 flex items-center text-xs opacity-80"
                             >
                                 <svg
-                                    v-if="messagesStore.loadingSendMessage"
+                                    v-if="messagesStore.loadingSendMessage && msg.id === null"
                                     class="w-4 h-4 text-gray-300 animate-pulse"
                                     fill="currentColor"
                                     viewBox="0 0 20 20"
@@ -249,7 +249,6 @@ const messagesStore = useMessagesStore()
 const authStore = useAuthStore()
 
 const selectedChat = ref(null)
-const messages = ref([])
 const messageInput = ref("")
 const myId = authStore.user.id
 
@@ -276,7 +275,7 @@ function getInitials(user) {
 
 function closeChat() {
     selectedChat.value = null
-    messages.value = []
+    messagesStore.messages = []
     showChatList.value = true
     // if (echoChannel) window.Echo.leave(echoChannel)
     // echoChannel = null
@@ -300,7 +299,7 @@ function subscribeToChat(chatId) {
     channel.listen(".message.sent", async (message) => {
         if (message.senderId !== myId) {
             await messagesStore.readMessages(chatId)
-            messages.value.push(message)
+            messagesStore.messages.push(message)
             scrollToBottom()
         }
 
@@ -363,8 +362,6 @@ async function openChat(chat) {
 
     showChatList.value = false
 
-    console.log(showChatList.value)
-
     page = 1
     hasMore = true
 
@@ -391,8 +388,6 @@ async function loadMessages(chatId, pageNumber = 1, scrollToEnd = false) {
 
     if (messagesStore.messages.length < perPage) hasMore = false
 
-    messages.value = messagesStore.messages
-
     if (pageNumber === 1) {
         if (scrollToEnd) scrollToBottom()
     } else {
@@ -417,8 +412,20 @@ function onScroll() {
 async function sendMessage() {
     if (!messageInput.value.trim()) return
 
+    messagesStore.messages.push({
+        chatId: selectedChat.value.id,
+        content: messageInput.value,
+        createdAt: null,
+        id: null,
+        isRead: false,
+        senderId: myId
+    })
+
     await messagesStore.sendMessage(selectedChat.value.id, messageInput.value)
-    messages.value.push(messagesStore.sendMessageData)
+
+    messagesStore.messages[messagesStore.messages.length - 1].id = messagesStore.sendMessageData.id;
+    messagesStore.messages[messagesStore.messages.length - 1].createdAt = messagesStore.sendMessageData.createdAt;
+
     messagesStore.resetSendMessage()
     messageInput.value = ""
     scrollToBottom()
@@ -440,17 +447,12 @@ onMounted(async () => {
 
     Echo.join('online')
         .here((users) => {
-            console.log('current users: ', users)
             chatsStore.updateUserActivityList(users);
         })
         .joining((user) => {
-            console.log('joining user: ', user)
-
             chatsStore.userJoining(user);
         })
         .leaving((user) => {
-            console.log('leaving user: ', user)
-
             chatsStore.userLeaving(user);
         })
         .error((error) => console.error('Error presence:', error));
@@ -460,10 +462,7 @@ onMounted(async () => {
     userChannel.listen('.new.message', async (e) => {
         const { chat_id, message } = e
 
-        console.log(e)
         if (selectedChat.value?.id === chat_id) {
-
-            console.log(true)
             return
         }
 
