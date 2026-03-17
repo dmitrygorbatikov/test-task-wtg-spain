@@ -111,7 +111,7 @@
             <header class="
         h-14 md:h-16 border-b border-gray-800
         flex items-center px-4 md:px-6 gap-4
-        bg-gray-950/90 backdrop-blur-sm sticky top-0 z-10
+        bg-gray-950/90 backdrop-blur-sm top-0 z-10
       ">
                 <button
                     v-if="isMobile && selectedChat"
@@ -240,7 +240,7 @@
                     </template>
 
                 </div>
-                <footer class="p-3 md:p-4 border-t border-gray-800 flex gap-3 bg-gray-950 sticky bottom-0 z-10"> <input v-model="messageInput" @keyup.enter="sendMessage" placeholder="Повідомлення..." class="flex-1 bg-gray-900 border border-gray-800 rounded-full px-5 py-3 focus:outline-none focus:border-emerald-500 placeholder-gray-500" /> <button @click="sendMessage" class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 rounded-full font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed" :disabled="!messageInput.trim()" > Відправити </button> </footer>
+                <footer class="p-3 md:p-4 border-t border-gray-800 flex gap-3 bg-gray-950 bottom-0 z-10"> <input v-model="messageInput" @keyup.enter="sendMessage" placeholder="Повідомлення..." class="flex-1 bg-gray-900 border border-gray-800 rounded-full px-5 py-3 focus:outline-none focus:border-emerald-500 placeholder-gray-500" /> <button @click="sendMessage" class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 rounded-full font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed" :disabled="!messageInput.trim()" > Відправити </button> </footer>
 
             </template>
         </main>
