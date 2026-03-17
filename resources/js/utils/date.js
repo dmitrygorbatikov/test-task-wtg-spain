@@ -1,3 +1,5 @@
+import {useMessagesStore} from "../stores/messages.js";
+
 export function formatLastMessageTime(timestamp) {
     if (!timestamp) return '';
 
@@ -17,7 +19,7 @@ export function formatLastMessageTime(timestamp) {
     const yesterday = new Date(now);
     yesterday.setDate(yesterday.getDate() - 1);
     if (date.toDateString() === yesterday.toDateString()) {
-        return 'вчера';
+        return 'вчора';
     }
 
     if (diffMs < 7 * 24 * 60 * 60 * 1000) {
@@ -30,3 +32,26 @@ export function formatLastMessageTime(timestamp) {
         year: date.getFullYear() === now.getFullYear() ? undefined : '2-digit'
     });
 }
+
+export function formatDate(date) {
+    const d = new Date(date)
+    return d.toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+export function isNewDay(index) {
+    const messagesStore = useMessagesStore()
+
+    if (index === 0) return true
+    if(!messagesStore.messages[index].createdAt || !messagesStore.messages[index - 1].createdAt) return
+
+    const current = new Date(messagesStore.messages[index].createdAt)
+    const prev = new Date(messagesStore.messages[index - 1].createdAt)
+
+    return current.toDateString() !== prev.toDateString()
+}
+
+export function formatTime(date) {
+    const d = new Date(date)
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
+}
+

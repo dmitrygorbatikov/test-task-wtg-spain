@@ -157,76 +157,98 @@
             <template v-if="selectedChat">
                 <div
                     ref="containerRef"
-                    class="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 pb-24 md:pb-6"
+                    class="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:pb-6"
                     @scroll="onScroll"
                 >
-                    <div
-                        v-for="msg in messagesStore.messages"
-                        :key="msg.id"
-                        class="flex"
-                        :class="msg.senderId === myId ? 'justify-end' : 'justify-start'"
-                    >
+                    <template v-for="(msg, index) in messagesStore.messages" :key="msg.id || msg.tempId">
+
+                        <div v-if="!messagesStore.loading && isNewDay(index)" class="flex justify-center my-4">
+                <span class="bg-gray-800 text-gray-300 text-xs px-3 py-1 rounded-full">
+                    {{ formatDate(msg.createdAt, messagesStore) }}
+                </span>
+                        </div>
+
                         <div
-                            class="
-                max-w-[80%] md:max-w-md px-4 py-2.5 rounded-2xl relative group break-words
-              "
-                            :class="msg.senderId === myId
-                ? 'bg-emerald-600 text-white rounded-br-none'
-                : 'bg-gray-800 text-gray-100 rounded-bl-none'"
+                            class="flex"
+                            :class="msg.senderId === myId ? 'justify-end' : 'justify-start'"
                         >
-                            {{ msg.content }}
-
                             <div
-                                v-if="msg.senderId === myId"
-                                class="absolute bottom-1 right-2.5 flex items-center text-xs opacity-80"
+                                class="max-w-[80%] md:max-w-md px-4 py-2.5 pr-16 rounded-2xl relative group break-words"
+                                :class="msg.senderId === myId
+                        ? 'bg-emerald-600 text-white rounded-br-none'
+                        : 'bg-gray-800 text-gray-100 rounded-bl-none'"
                             >
-                                <svg
-                                    v-if="messagesStore.loadingSendMessage && msg.id === null"
-                                    class="w-4 h-4 text-gray-300 animate-pulse"
-                                    fill="currentColor"
-                                    viewBox="0 0 20 20"
-                                >
-                                    <path d="M10 18a8 8 0 100-16 8 8 0 000 16z" />
-                                </svg>
 
-                                <svg
-                                    v-else-if="!msg.isRead"
-                                    class="w-4 h-4 text-gray-300"
-                                    fill="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-                                </svg>
+                                <!-- текст сообщения -->
+                                <div class="whitespace-pre-wrap">
+                                    {{ msg.content }}
+                                </div>
 
-                                <svg
-                                    v-else
-                                    class="w-4 h-4 text-blue-400"
-                                    fill="currentColor"
-                                    viewBox="0 0 24 24"
+                                <!-- статус + время -->
+                                <div
+                                    class="absolute bottom-1.5 right-2 flex items-center gap-1 text-xs opacity-80"
                                 >
-                                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-                                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" transform="translate(6 0)"/>
-                                </svg>
+                                    <!-- loading -->
+                                    <svg
+                                        v-if="msg.senderId === myId && messagesStore.loadingSendMessage && msg.id === null"
+                                        class="w-4 h-4 text-gray-300 animate-pulse"
+                                        fill="currentColor"
+                                        viewBox="0 0 20 20"
+                                    >
+                                        <path d="M10 18a8 8 0 100-16 8 8 0 000 16z"/>
+                                    </svg>
+
+                                    <!-- error -->
+                                    <svg
+                                        v-else-if="msg.senderId === myId && messagesStore.errorSendMessage && msg.id === null"
+                                        class="w-4 h-4 text-red-500"
+                                        fill="currentColor"
+                                        viewBox="0 0 20 20"
+                                    >
+                                        <path
+                                            fill-rule="evenodd"
+                                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.536-10.95a1 1 0 10-1.414-1.414L10 7.757 7.879 5.636A1 1 0 106.464 7.05L8.586 9.172 6.464 11.293a1 1 0 101.415 1.414L10 10.586l2.121 2.121a1 1 0 001.415-1.414L11.414 9.17l2.122-2.121z"
+                                            clip-rule="evenodd"
+                                        />
+                                    </svg>
+
+                                    <!-- delivered -->
+                                    <svg
+                                        v-else-if="msg.senderId === myId && !msg.isRead"
+                                        class="w-4 h-4 text-gray-300"
+                                        fill="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                                    </svg>
+
+                                    <!-- read -->
+                                    <svg
+                                        v-else-if="msg.senderId === myId"
+                                        class="w-4 h-4 text-blue-400"
+                                        fill="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" transform="translate(6 0)"/>
+                                    </svg>
+
+                                    <!-- время -->
+                                    <span
+                                        v-if="!(msg.senderId === myId && messagesStore.errorSendMessage && msg.id === null)"
+                                        class="text-[11px] opacity-70"
+                                    >
+                            {{ formatTime(msg.createdAt) }}
+                        </span>
+
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>
+                    </template>
 
-                <footer class="p-3 md:p-4 border-t border-gray-800 flex gap-3 bg-gray-950 sticky bottom-0 z-10">
-                    <input
-                        v-model="messageInput"
-                        @keyup.enter="sendMessage"
-                        placeholder="Повідомлення..."
-                        class="flex-1 bg-gray-900 border border-gray-800 rounded-full px-5 py-3 focus:outline-none focus:border-emerald-500 placeholder-gray-500"
-                    />
-                    <button
-                        @click="sendMessage"
-                        class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 rounded-full font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        :disabled="!messageInput.trim()"
-                    >
-                        Відправити
-                    </button>
-                </footer>
+                </div>
+                <footer class="p-3 md:p-4 border-t border-gray-800 flex gap-3 bg-gray-950 sticky bottom-0 z-10"> <input v-model="messageInput" @keyup.enter="sendMessage" placeholder="Повідомлення..." class="flex-1 bg-gray-900 border border-gray-800 rounded-full px-5 py-3 focus:outline-none focus:border-emerald-500 placeholder-gray-500" /> <button @click="sendMessage" class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 rounded-full font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed" :disabled="!messageInput.trim()" > Відправити </button> </footer>
+
             </template>
         </main>
     </div>
@@ -240,7 +262,7 @@ import { useMessagesStore } from "../stores/messages.js"
 import { useAuthStore } from "../stores/auth.js"
 import { useRoute, useRouter } from "vue-router"
 import '../utils/date.js'
-import {formatLastMessageTime} from "../utils/date.js";
+import {formatDate, formatLastMessageTime, formatTime, isNewDay} from "../utils/date.js";
 const route = useRoute()
 const router = useRouter()
 
@@ -277,8 +299,6 @@ function closeChat() {
     selectedChat.value = null
     messagesStore.messages = []
     showChatList.value = true
-    // if (echoChannel) window.Echo.leave(echoChannel)
-    // echoChannel = null
     router.replace({ query: {} })
 }
 
@@ -301,38 +321,6 @@ function subscribeToChat(chatId) {
             await messagesStore.readMessages(chatId)
             messagesStore.messages.push(message)
             scrollToBottom()
-        }
-
-        const chat_id = message.chatId
-
-        let chatIndex = chatsStore.chats.findIndex(c => c.id === chat_id)
-
-        if (chatIndex !== -1) {
-            const chat = chatsStore.chats[chatIndex]
-
-            chat.lastMessageContent = { content: message.content }
-            chat.lastMessageAt = message.createdAt
-
-            chatsStore.sortChats()
-        }
-        else {
-            try {
-                await chatsStore.loadChatItem(chat_id)
-
-                if (chatsStore.chat) {
-                    const newChat = {
-                        ...chatsStore.chat,
-                        unreadCount: 1,
-                        lastMessageContent: { content: message.content },
-                        lastMessageAt: message.createdAt
-                    }
-
-                    chatsStore.chats.unshift(newChat)
-                    chatsStore.sortChats()
-                }
-            } catch (err) {
-                console.warn(`Error chat loading ${chat_id} for message`, err)
-            }
         }
     })
 
@@ -403,7 +391,7 @@ async function loadMessages(chatId, pageNumber = 1, scrollToEnd = false) {
 
 function onScroll() {
     if (!containerRef.value) return
-    if (containerRef.value.scrollTop <= 50 && hasMore && !isLoadingOld) {
+    if (containerRef.value.scrollTop <= 75 && hasMore && !isLoadingOld) {
         page++
         loadMessages(selectedChat.value.id, page)
     }
@@ -420,6 +408,38 @@ async function sendMessage() {
         isRead: false,
         senderId: myId
     })
+
+    const chat_id = selectedChat.value.id
+
+    let chatIndex = chatsStore.chats.findIndex(c => c.id === chat_id)
+
+    if (chatIndex !== -1) {
+        const chat = chatsStore.chats[chatIndex]
+
+        chat.lastMessageContent = { content: messageInput.value }
+        chat.lastMessageAt = new Date()
+
+        chatsStore.sortChats()
+    }
+    else {
+        try {
+            await chatsStore.loadChatItem(chat_id)
+
+            if (chatsStore.chat) {
+                const newChat = {
+                    ...chatsStore.chat,
+                    unreadCount: 1,
+                    lastMessageContent: { content: messageInput.value },
+                    lastMessageAt: new Date()
+                }
+
+                chatsStore.chats.unshift(newChat)
+                chatsStore.sortChats()
+            }
+        } catch (err) {
+            console.warn(`Error chat loading ${chat_id} for message`, err)
+        }
+    }
 
     await messagesStore.sendMessage(selectedChat.value.id, messageInput.value)
 
