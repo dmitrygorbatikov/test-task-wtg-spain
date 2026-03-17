@@ -107,7 +107,7 @@
                             <ul class="space-y-4 text-gray-400 text-base">
                                 <li><router-link to="/" class="hover:text-emerald-400 transition-colors">Чати</router-link></li>
                                 <li><router-link to="/users" class="hover:text-emerald-400 transition-colors">Користувачі</router-link></li>
-                                <li><a href="/policy" class="hover:text-emerald-400 transition-colors">Політика конфіденційності</a></li>
+                                <li><a href="#" class="hover:text-emerald-400 transition-colors">Політика конфіденційності</a></li>
                             </ul>
                         </div>
 
