@@ -1,6 +1,10 @@
 <template>
     <div class="min-h-screen flex flex-col bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white">
-        <header class="bg-gray-950/80 backdrop-blur-lg border-b border-gray-800/50 sticky top-0 z-50 shadow-lg shadow-black/30">
+
+        <header
+            class="bg-gray-950/80 backdrop-blur-lg border-b border-gray-800/50 shadow-lg shadow-black/30
+             md:sticky md:top-0 z-50"
+        >
             <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between h-16 md:h-20">
                     <div class="flex items-center gap-10">
