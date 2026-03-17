@@ -63,7 +63,7 @@
                         <div class="flex items-center justify-between gap-2 mt-0.5">
 
                         <span class="text-sm text-gray-400 truncate flex-1">
-        {{ chat.lastMessageContent?.content || 'Нет сообщений' }}
+        {{ chat.lastMessageContent?.content || ' ' }}
       </span>
 
                             <span
@@ -179,18 +179,15 @@
                         : 'bg-gray-800 text-gray-100 rounded-bl-none'"
                             >
 
-                                <!-- текст сообщения -->
                                 <div class="whitespace-pre-wrap">
                                     {{ msg.content }}
                                 </div>
 
-                                <!-- статус + время -->
                                 <div
                                     class="absolute bottom-1.5 right-2 flex items-center gap-1 text-xs opacity-80"
                                 >
-                                    <!-- loading -->
                                     <svg
-                                        v-if="msg.senderId === myId && messagesStore.loadingSendMessage && msg.id === null"
+                                        v-if="msg.senderId === myId && messagesStore.loadingSendMessage && msg.id === null && index === messagesStore.messages.length-1"
                                         class="w-4 h-4 text-gray-300 animate-pulse"
                                         fill="currentColor"
                                         viewBox="0 0 20 20"
@@ -198,9 +195,8 @@
                                         <path d="M10 18a8 8 0 100-16 8 8 0 000 16z"/>
                                     </svg>
 
-                                    <!-- error -->
                                     <svg
-                                        v-else-if="msg.senderId === myId && messagesStore.errorSendMessage && msg.id === null"
+                                        v-if="msg.senderId === myId && messagesStore.errorSendMessage && msg.id === null"
                                         class="w-4 h-4 text-red-500"
                                         fill="currentColor"
                                         viewBox="0 0 20 20"
@@ -212,9 +208,8 @@
                                         />
                                     </svg>
 
-                                    <!-- delivered -->
                                     <svg
-                                        v-else-if="msg.senderId === myId && !msg.isRead"
+                                        v-if="msg.senderId === myId && !msg.isRead && msg.id !== null && msg.createdAt !== null"
                                         class="w-4 h-4 text-gray-300"
                                         fill="currentColor"
                                         viewBox="0 0 24 24"
@@ -222,9 +217,8 @@
                                         <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
                                     </svg>
 
-                                    <!-- read -->
                                     <svg
-                                        v-else-if="msg.senderId === myId"
+                                        v-if="msg.senderId === myId && msg.isRead"
                                         class="w-4 h-4 text-blue-400"
                                         fill="currentColor"
                                         viewBox="0 0 24 24"
@@ -233,9 +227,8 @@
                                         <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" transform="translate(6 0)"/>
                                     </svg>
 
-                                    <!-- время -->
                                     <span
-                                        v-if="!(msg.senderId === myId && messagesStore.errorSendMessage && msg.id === null)"
+                                        v-if="!(msg.senderId === myId && messagesStore.errorSendMessage && msg.id === null) && msg.createdAt !== null"
                                         class="text-[11px] opacity-70"
                                     >
                             {{ formatTime(msg.createdAt) }}
@@ -398,16 +391,21 @@ function onScroll() {
 }
 
 async function sendMessage() {
-    if (!messageInput.value.trim()) return
+    const content = messageInput.value.trim()
+
+    if (!content) return
 
     messagesStore.messages.push({
         chatId: selectedChat.value.id,
-        content: messageInput.value,
+        content,
         createdAt: null,
         id: null,
         isRead: false,
         senderId: myId
     })
+
+    messageInput.value = ""
+    scrollToBottom()
 
     const chat_id = selectedChat.value.id
 
@@ -416,7 +414,7 @@ async function sendMessage() {
     if (chatIndex !== -1) {
         const chat = chatsStore.chats[chatIndex]
 
-        chat.lastMessageContent = { content: messageInput.value }
+        chat.lastMessageContent = { content }
         chat.lastMessageAt = new Date()
 
         chatsStore.sortChats()
@@ -429,7 +427,7 @@ async function sendMessage() {
                 const newChat = {
                     ...chatsStore.chat,
                     unreadCount: 1,
-                    lastMessageContent: { content: messageInput.value },
+                    lastMessageContent: { content },
                     lastMessageAt: new Date()
                 }
 
@@ -441,14 +439,14 @@ async function sendMessage() {
         }
     }
 
-    await messagesStore.sendMessage(selectedChat.value.id, messageInput.value)
+    await messagesStore.sendMessage(selectedChat.value.id, content)
 
-    messagesStore.messages[messagesStore.messages.length - 1].id = messagesStore.sendMessageData.id;
-    messagesStore.messages[messagesStore.messages.length - 1].createdAt = messagesStore.sendMessageData.createdAt;
+    if (messagesStore.sendMessageData) {
+        messagesStore.messages[messagesStore.messages.length - 1].id = messagesStore.sendMessageData.id;
+        messagesStore.messages[messagesStore.messages.length - 1].createdAt = messagesStore.sendMessageData.createdAt;
+    }
 
     messagesStore.resetSendMessage()
-    messageInput.value = ""
-    scrollToBottom()
 }
 
 const loadMoreTrigger = ref(null)
