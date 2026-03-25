@@ -20,28 +20,28 @@ export const useChatsStore = defineStore("chats", {
         updateUserActivityList(activeUsers) {
             const newOnline = new Map()
 
-            activeUsers.forEach(user => {
-                newOnline.set(user.id, true)
+            activeUsers.forEach(id => {
+                newOnline.set(id, true)
             })
 
             this.onlineUsers = newOnline
         },
-        userJoining(user) {
+        userJoining(userId) {
             const newOnline = new Map()
 
             this.onlineUsers.forEach(user => {
                 newOnline.set(user.id, true)
             })
-            newOnline.set(user.id, user);
+            newOnline.set(userId, userId);
             this.onlineUsers = newOnline
         },
-        userLeaving(user) {
+        userLeaving(userId) {
             const newOnline = new Map()
 
-            this.onlineUsers.forEach(user => {
-                newOnline.set(user.id, true)
+            this.onlineUsers.forEach(id => {
+                newOnline.set(id, true)
             })
-            newOnline.delete(user.id);
+            newOnline.delete(userId);
             this.onlineUsers = newOnline
         },
         isUserOnline(chat, authUserId) {

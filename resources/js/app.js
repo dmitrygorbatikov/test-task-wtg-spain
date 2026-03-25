@@ -4,7 +4,6 @@ import App from './App.vue'
 import router from './router'
 
 import './services/api'
-import './bootstrap'
 
 const app = createApp(App)
 const pinia = createPinia()

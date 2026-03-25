@@ -135,7 +135,6 @@ return [
          */
         App\UI\Api\Providers\AppServiceProvider::class,
         App\UI\Api\Providers\AuthServiceProvider::class,
-        App\UI\Api\Providers\BroadcastServiceProvider::class,
         App\UI\Api\Providers\EventServiceProvider::class,
         App\UI\Api\Providers\RouteServiceProvider::class,
 

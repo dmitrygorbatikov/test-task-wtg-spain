@@ -256,6 +256,12 @@ import { useAuthStore } from "../stores/auth.js"
 import { useRoute, useRouter } from "vue-router"
 import '../utils/date.js'
 import {formatDate, formatLastMessageTime, formatTime, isNewDay} from "../utils/date.js";
+import { io } from "socket.io-client"
+
+const socket = io(import.meta.env.VITE_WEBSOCKET_SERVER_URL, {
+    transports: ["websocket"],
+})
+
 const route = useRoute()
 const router = useRouter()
 
@@ -270,8 +276,6 @@ const myId = authStore.user.id
 const isMobile = computed(() => window.innerWidth < 768)
 const showChatList = ref(true)
 
-let userChannel = null
-let echoChannel = null
 let isLoadingOld = false
 let hasMore = true
 let page = 1
@@ -304,20 +308,17 @@ function scrollToBottom() {
 }
 
 function subscribeToChat(chatId) {
-    if (echoChannel) window.Echo.leave(echoChannel)
+    socket.off('message.sent')
 
-    echoChannel = `chat.${chatId}`
-    const channel = window.Echo.private(echoChannel)
-
-    channel.listen(".message.sent", async (message) => {
-        if (message.senderId !== myId) {
-            await messagesStore.readMessages(chatId)
-            messagesStore.messages.push(message)
-            scrollToBottom()
-        }
+    socket.on('message.sent', async (message) => {
+            if (message.senderId !== myId) {
+                await messagesStore.readMessages(chatId)
+                messagesStore.messages.push(message)
+                scrollToBottom()
+            }
     })
 
-    channel.listen(".message.read", () => {
+    socket.on("message.read", () => {
         messagesStore.messages.forEach(message => {
             message.isRead = true
         })
@@ -335,6 +336,11 @@ async function readMessagesEcho(chatId) {
 }
 
 async function openChat(chat) {
+    if (selectedChat?.value?.id) {
+        socket.emit('leaveChat', selectedChat.value.id)
+    }
+
+    socket.emit('joinChat', chat.id)
 
     messagesStore.resetSendMessage()
     messagesStore.reset()
@@ -407,9 +413,9 @@ async function sendMessage() {
     messageInput.value = ""
     scrollToBottom()
 
-    const chat_id = selectedChat.value.id
+    const chatId = selectedChat.value.id
 
-    let chatIndex = chatsStore.chats.findIndex(c => c.id === chat_id)
+    let chatIndex = chatsStore.chats.findIndex(c => c.id === chatId)
 
     if (chatIndex !== -1) {
         const chat = chatsStore.chats[chatIndex]
@@ -421,7 +427,7 @@ async function sendMessage() {
     }
     else {
         try {
-            await chatsStore.loadChatItem(chat_id)
+            await chatsStore.loadChatItem(chatId)
 
             if (chatsStore.chat) {
                 const newChat = {
@@ -435,7 +441,7 @@ async function sendMessage() {
                 chatsStore.sortChats()
             }
         } catch (err) {
-            console.warn(`Error chat loading ${chat_id} for message`, err)
+            console.warn(`Error chat loading ${chatId} for message`, err)
         }
     }
 
@@ -453,6 +459,30 @@ const loadMoreTrigger = ref(null)
 let observer = null
 
 onMounted(async () => {
+    socket.on("connect", () => {
+        socket.emit("joinUser", myId)
+    })
+
+    socket.on("online:list", (userIds) => {
+        chatsStore.updateUserActivityList(userIds)
+    })
+
+    socket.on("online:join", (userIds) => {
+        chatsStore.userJoining(userIds)
+    })
+
+    socket.on("online:leave", (userId) => {
+        chatsStore.userLeaving(userId)
+    })
+
+    socket.on("connect_error", (err) => {
+        console.log("❌ CONNECT ERROR", err.message)
+    })
+
+    socket.on("disconnect", (reason) => {
+        console.log("❌ DISCONNECTED", reason)
+    })
+
     await chatsStore.loadChats(true)
 
     const chatId = route.query.chatId
@@ -463,55 +493,37 @@ onMounted(async () => {
         }
     }
 
-    Echo.join('online')
-        .here((users) => {
-            chatsStore.updateUserActivityList(users);
-        })
-        .joining((user) => {
-            chatsStore.userJoining(user);
-        })
-        .leaving((user) => {
-            chatsStore.userLeaving(user);
-        })
-        .error((error) => console.error('Error presence:', error));
-
-    userChannel = Echo.private(`user.${myId}`)
-
-    userChannel.listen('.new.message', async (e) => {
-        const { chat_id, message } = e
-
-        if (selectedChat.value?.id === chat_id) {
-            return
-        }
-
-        let chatIndex = chatsStore.chats.findIndex(c => c.id === chat_id)
+    socket.on('new.message', async (message) => {
+        console.log('new.message')
+        let chatIndex = chatsStore.chats.findIndex(c => c.id === message.chatId)
 
         if (chatIndex !== -1) {
             const chat = chatsStore.chats[chatIndex]
 
-            chat.unreadCount = (chat.unreadCount || 0) + 1
+            if (selectedChat.value?.id !== message.chatId) {
+                chat.unreadCount = (chat.unreadCount || 0) + 1
+            }
             chat.lastMessageContent = { content: message.content }
-            chat.lastMessageAt = message.created_at
+            chat.lastMessageAt = message.createdAt
 
             chatsStore.sortChats()
-        }
-        else {
+        } else {
             try {
-                await chatsStore.loadChatItem(chat_id)
+                await chatsStore.loadChatItem(message.chatId)
 
                 if (chatsStore.chat) {
                     const newChat = {
                         ...chatsStore.chat,
                         unreadCount: 1,
                         lastMessageContent: { content: message.content },
-                        lastMessageAt: message.created_at
+                        lastMessageAt: message.createdAt
                     }
 
                     chatsStore.chats.unshift(newChat)
                     chatsStore.sortChats()
                 }
             } catch (err) {
-                console.warn(`Error chat loading ${chat_id} for message`, err)
+                console.warn(`Error chat loading ${message.chatId} for message`, err)
             }
         }
     })
@@ -554,9 +566,13 @@ onUnmounted(() => {
     if (observer) {
         observer.disconnect()
     }
-    if (echoChannel) window.Echo.leave(echoChannel)
-    if (userChannel) {
-        Echo.leave(`user.${myId}`)
+
+    if(selectedChat?.value?.id) {
+        socket.emit('leaveChat', selectedChat.value.id)
     }
+
+    socket.off('new.message')
+    socket.off('message.sent')
+    socket.off('message.read')
 })
 </script>

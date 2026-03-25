@@ -6,6 +6,9 @@ services:
             args:
                 WWWGROUP: '${WWWGROUP}'
         image: 'sail-8.5/app'
+        dns:
+            - 8.8.8.8
+            - 1.1.1.1
         extra_hosts:
             - 'host.docker.internal:host-gateway'
         ports:
@@ -24,8 +27,11 @@ services:
         depends_on:
             - mysql
             - redis
+
     mysql:
         image: 'mysql:8.4'
+        extra_hosts:
+            - "redis:127.0.0.1"
         ports:
             - '${FORWARD_DB_PORT:-3306}:3306'
         environment:
@@ -49,10 +55,11 @@ services:
                 - '-p${DB_PASSWORD}'
             retries: 3
             timeout: 5s
+
     redis:
         image: 'redis:alpine'
-        ports:
-            - '${FORWARD_REDIS_PORT:-6379}:6379'
+#        ports:
+#            - '${FORWARD_REDIS_PORT:-6379}:6379'
         volumes:
             - 'sail-redis:/data'
         networks:

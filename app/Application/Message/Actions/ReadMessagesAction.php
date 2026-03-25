@@ -2,11 +2,11 @@
 
 namespace App\Application\Message\Actions;
 
-use App\UI\Broadcasting\Events\Message\MessageReadEvent;
 use App\Domains\Chat\Eloquent\ChatEloquent;
 use App\Domains\Message\Eloquent\MessageEloquent;
 use App\Domains\Chat\Exceptions\ChatFindException;
 use App\Domains\User\Models\User;
+use Illuminate\Support\Facades\Redis;
 
 readonly class ReadMessagesAction
 {
@@ -29,6 +29,6 @@ readonly class ReadMessagesAction
 
         $this->messageEloquent->readChatMessagesBuilder($chatId);
 
-        broadcast(new MessageReadEvent($chatId))->toOthers();
+        Redis::publish('chat.message.read', json_encode(['chatId' => $chatId]));
     }
 }
