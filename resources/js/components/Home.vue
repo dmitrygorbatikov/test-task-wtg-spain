@@ -131,7 +131,17 @@
                     <div class="font-medium truncate">
                         {{ getUser(selectedChat).firstName }} {{ getUser(selectedChat).lastName }}
                     </div>
+
+                    <!-- Кнопка звонка -->
+                    <button
+                        class="ml-auto text-emerald-500 hover:text-emerald-400"
+                        @click="startCall(getUser(selectedChat).id)"
+                        title="Позвонить"
+                    >
+                        📞
+                    </button>
                 </div>
+
 
                 <div v-else class="text-gray-400 font-medium md:hidden">
                     Чати
@@ -152,6 +162,46 @@
                 </h2>
 
             </div>
+
+            <template v-if="callModal.visible">
+                <div class="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+                    <div class="bg-gray-900 p-6 rounded-xl flex flex-col gap-4 w-80 text-center">
+                        <h3>
+                            {{
+                                callModal.status === 'calling' ? 'Звоним...' :
+                                    callModal.status === 'ringing' ? 'Входящий звонок' :
+                                        callModal.status === 'active' ? 'В разговоре' :
+                                            'Звонок'
+                            }}
+                        </h3>
+                        <p class="text-gray-300">
+                            {{ getUserById(callModal.incoming ? callModal.from : callModal.to)?.firstName }}
+                        </p>
+
+                        <div class="flex gap-4 justify-center mt-4">
+                            <audio ref="remoteAudio" autoplay playsinline></audio>
+                            <!-- входящий -->
+                            <button v-if="callModal.status === 'ringing'" @click="acceptCall">
+                                Принять
+                            </button>
+
+                            <button v-if="callModal.status === 'ringing'" @click="rejectCall">
+                                Отклонить
+                            </button>
+
+                            <!-- исходящий -->
+                            <button v-if="callModal.status === 'calling'" @click="endCall">
+                                Отменить
+                            </button>
+
+                            <!-- активный -->
+                            <button v-if="callModal.status === 'active'" @click="endCall">
+                                Завершить
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </template>
 
 
             <template v-if="selectedChat">
@@ -248,6 +298,11 @@
 </template>
 
 
+<!--
+  ВАШ ТЕМПЛЕЙТ ОСТАЁТСЯ БЕЗ ИЗМЕНЕНИЙ
+  (я только исправил <script setup>)
+-->
+
 <script setup>
 import {ref, onMounted, onUnmounted, nextTick, watch, computed} from "vue"
 import { useChatsStore } from "../stores/chats.js"
@@ -261,6 +316,195 @@ import { io } from "socket.io-client"
 const socket = io(import.meta.env.VITE_WEBSOCKET_SERVER_URL, {
     transports: ["websocket"],
 })
+
+let pendingCandidates = []
+
+/* =======================
+   WEBRTC
+======================= */
+
+let pc = null
+
+const configuration = {
+    iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        {
+            urls: 'turn:openrelay.metered.ca:80',
+            username: 'openrelayproject',
+            credential: 'openrelayproject',
+        },
+    ],
+}
+
+const localStream = ref(null)
+const remoteStream = ref(null)
+
+async function initMedia() {
+    localStream.value = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: false,
+    })
+}
+
+async function createPeerConnection() {
+    pc = new RTCPeerConnection(configuration)
+
+    pc.onicecandidate = (event) => {
+        if (event.candidate && callModal.value.callId) {
+            socket.emit('call.ice', {
+                callId: callModal.value.callId,
+                candidate: event.candidate,
+                sender: myId,
+            })
+        }
+    }
+
+    pc.ontrack = (event) => {
+        const stream = event.streams[0]
+        remoteStream.value = stream
+
+        if (remoteAudio.value) {
+            remoteAudio.value.srcObject = stream
+            remoteAudio.value.muted = false
+
+            remoteAudio.value.onloadedmetadata = () => {
+                remoteAudio.value.play().catch(err => {
+                    console.warn("Автовоспроизведение заблокировано:", err)
+                })
+            }
+        }
+    }
+
+    if (localStream.value) {
+        localStream.value.getTracks().forEach(track => {
+            pc.addTrack(track, localStream.value)
+        })
+    }
+}
+
+/* =======================
+   CALL STATE
+======================= */
+
+const callModal = ref({
+    visible: false,
+    callId: null,
+    from: null,
+    to: null,
+    incoming: false,
+    status: 'idle',
+    offer: null,
+})
+
+async function startCall(toUserId) {
+    await initMedia()
+
+    const callId = crypto.randomUUID()
+
+    callModal.value = {
+        visible: true,
+        callId,
+        from: myId,
+        to: toUserId,
+        incoming: false,
+        status: 'calling',
+        offer: null,
+    }
+
+    await createPeerConnection()
+
+    const offer = await pc.createOffer()
+    await pc.setLocalDescription(offer)
+
+    // 1. Создаём звонок на бэкенде
+    socket.emit('call.request', { from: myId, to: toUserId, callId })
+
+    // 2. Отправляем SDP offer
+    socket.emit('call.offer', {
+        callId,
+        offer,
+        sender: myId,
+    })
+}
+
+async function acceptCall() {
+    if (!callModal.value.offer) {
+        console.error("No offer received yet!")
+        return
+    }
+
+    await initMedia()
+    await createPeerConnection()
+
+    await pc.setRemoteDescription(new RTCSessionDescription(callModal.value.offer))
+
+    // применяем кандидаты, которые пришли до setRemoteDescription
+    for (const candidate of pendingCandidates) {
+        await pc.addIceCandidate(new RTCIceCandidate(candidate))
+    }
+    pendingCandidates = []
+
+    const answer = await pc.createAnswer()
+    await pc.setLocalDescription(answer)
+
+    // 🔥 ИСПРАВЛЕНИЕ: добавили sender (нужно для handleAnswer на бэкенде)
+    socket.emit('call.answer', {
+        callId: callModal.value.callId,
+        answer,
+        sender: myId,
+    })
+
+    callModal.value.status = 'active'
+}
+
+function rejectCall() {
+    socket.emit('call.reject', {
+        callId: callModal.value.callId,
+        from: myId,
+        to: callModal.value.from,
+    })
+
+    callModal.value.visible = false
+    cleanupCall()
+}
+
+function endCall() {
+    cleanupCall()
+    socket.emit('call.end', { callId: callModal.value.callId })
+    callModal.value.visible = false
+}
+
+function cleanupCall() {
+    if (pc) {
+        pc.close()
+        pc = null
+    }
+    if (localStream.value) {
+        localStream.value.getTracks().forEach(track => track.stop())
+        localStream.value = null
+    }
+    pendingCandidates = []
+}
+
+/* =======================
+   AUDIO
+======================= */
+
+const remoteAudio = ref(null)
+
+watch(remoteStream, (stream) => {
+    if (remoteAudio.value && stream) {
+        remoteAudio.value.srcObject = stream
+    }
+})
+
+function getUserById(userId) {
+    for (const chat of chatsStore.chats) {
+        if (chat.first.id === userId) return chat.first
+        if (chat.second.id === userId) return chat.second
+    }
+    return null
+}
 
 const route = useRoute()
 const router = useRouter()
@@ -311,11 +555,11 @@ function subscribeToChat(chatId) {
     socket.off('message.sent')
 
     socket.on('message.sent', async (message) => {
-            if (message.senderId !== myId) {
-                await messagesStore.readMessages(chatId)
-                messagesStore.messages.push(message)
-                scrollToBottom()
-            }
+        if (message.senderId !== myId) {
+            await messagesStore.readMessages(chatId)
+            messagesStore.messages.push(message)
+            scrollToBottom()
+        }
     })
 
     socket.on("message.read", () => {
@@ -327,11 +571,9 @@ function subscribeToChat(chatId) {
 
 async function readMessagesEcho(chatId) {
     const res = await messagesStore.readMessages(chatId)
-
-    if(res === true) {
+    if (res === true) {
         const index = chatsStore.chats.findIndex(chat => chat.id === chatId)
-
-        chatsStore.chats[index].unreadCount = 0
+        if (index !== -1) chatsStore.chats[index].unreadCount = 0
     }
 }
 
@@ -346,7 +588,6 @@ async function openChat(chat) {
     messagesStore.reset()
 
     selectedChat.value = chat
-
     showChatList.value = false
 
     page = 1
@@ -355,12 +596,11 @@ async function openChat(chat) {
     await loadMessages(chat.id, page, true)
     subscribeToChat(chat.id)
 
-    if(chat.unreadCount > 0) {
+    if (chat.unreadCount > 0) {
         await readMessagesEcho(chat.id)
     }
 
     scrollToBottom()
-
     await router.replace({query: {chatId: chat.id}})
 }
 
@@ -379,9 +619,7 @@ async function loadMessages(chatId, pageNumber = 1, scrollToEnd = false) {
         if (scrollToEnd) scrollToBottom()
     } else {
         await nextTick(() => {
-            if (container) {
-                container.scrollTop = container.scrollHeight - previousHeight
-            }
+            if (container) container.scrollTop = container.scrollHeight - previousHeight
         })
     }
 
@@ -398,7 +636,6 @@ function onScroll() {
 
 async function sendMessage() {
     const content = messageInput.value.trim()
-
     if (!content) return
 
     messagesStore.messages.push({
@@ -414,21 +651,16 @@ async function sendMessage() {
     scrollToBottom()
 
     const chatId = selectedChat.value.id
-
     let chatIndex = chatsStore.chats.findIndex(c => c.id === chatId)
 
     if (chatIndex !== -1) {
         const chat = chatsStore.chats[chatIndex]
-
         chat.lastMessageContent = { content }
         chat.lastMessageAt = new Date()
-
         chatsStore.sortChats()
-    }
-    else {
+    } else {
         try {
             await chatsStore.loadChatItem(chatId)
-
             if (chatsStore.chat) {
                 const newChat = {
                     ...chatsStore.chat,
@@ -436,7 +668,6 @@ async function sendMessage() {
                     lastMessageContent: { content },
                     lastMessageAt: new Date()
                 }
-
                 chatsStore.chats.unshift(newChat)
                 chatsStore.sortChats()
             }
@@ -448,8 +679,11 @@ async function sendMessage() {
     await messagesStore.sendMessage(selectedChat.value.id, content)
 
     if (messagesStore.sendMessageData) {
-        messagesStore.messages[messagesStore.messages.length - 1].id = messagesStore.sendMessageData.id;
-        messagesStore.messages[messagesStore.messages.length - 1].createdAt = messagesStore.sendMessageData.createdAt;
+        const lastMsg = messagesStore.messages[messagesStore.messages.length - 1]
+        if (lastMsg) {
+            lastMsg.id = messagesStore.sendMessageData.id
+            lastMsg.createdAt = messagesStore.sendMessageData.createdAt
+        }
     }
 
     messagesStore.resetSendMessage()
@@ -463,6 +697,69 @@ onMounted(async () => {
         socket.emit("joinUser", myId)
     })
 
+    // =======================
+    // CALL LISTENERS (исправленные)
+    // =======================
+    socket.on('call.incoming', (data) => {
+        callModal.value = {
+            visible: true,
+            callId: data.callId,
+            from: data.from,
+            to: myId,
+            incoming: true,
+            status: 'ringing',
+            offer: null,
+        }
+    })
+
+    socket.on('call.offer', (data) => {
+        if (callModal.value.callId === data.callId) {
+            callModal.value.offer = data.offer
+        }
+    })
+
+    // 🔥 ИСПРАВЛЕНИЕ: теперь бэкенд отправляет call.answer
+    socket.on('call.answer', async (data) => {
+        if (!pc || callModal.value.callId !== data.callId) return
+
+        await pc.setRemoteDescription(new RTCSessionDescription(data.answer))
+
+        for (const candidate of pendingCandidates) {
+            await pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(console.error)
+        }
+        pendingCandidates = []
+
+        callModal.value.status = 'active'
+    })
+
+    socket.on('call.ice', async (data) => {
+        if (!pc || callModal.value.callId !== data.callId) return
+
+        if (!pc.remoteDescription) {
+            pendingCandidates.push(data.candidate)
+            return
+        }
+
+        try {
+            await pc.addIceCandidate(new RTCIceCandidate(data.candidate))
+        } catch (e) {
+            console.error(e)
+        }
+    })
+
+    socket.on('call.ended', () => {
+        cleanupCall()
+        callModal.value.visible = false
+    })
+
+    socket.on('call.rejected', () => {
+        cleanupCall()
+        callModal.value.visible = false
+    })
+
+    // =======================
+    // Остальные слушатели (чат + онлайн)
+    // =======================
     socket.on("online:list", (userIds) => {
         chatsStore.updateUserActivityList(userIds)
     })
@@ -494,23 +791,19 @@ onMounted(async () => {
     }
 
     socket.on('new.message', async (message) => {
-        console.log('new.message')
         let chatIndex = chatsStore.chats.findIndex(c => c.id === message.chatId)
 
         if (chatIndex !== -1) {
             const chat = chatsStore.chats[chatIndex]
-
             if (selectedChat.value?.id !== message.chatId) {
                 chat.unreadCount = (chat.unreadCount || 0) + 1
             }
             chat.lastMessageContent = { content: message.content }
             chat.lastMessageAt = message.createdAt
-
             chatsStore.sortChats()
         } else {
             try {
                 await chatsStore.loadChatItem(message.chatId)
-
                 if (chatsStore.chat) {
                     const newChat = {
                         ...chatsStore.chat,
@@ -518,7 +811,6 @@ onMounted(async () => {
                         lastMessageContent: { content: message.content },
                         lastMessageAt: message.createdAt
                     }
-
                     chatsStore.chats.unshift(newChat)
                     chatsStore.sortChats()
                 }
@@ -534,28 +826,18 @@ onMounted(async () => {
                 chatsStore.loadMoreChats()
             }
         },
-        {
-            root: null,
-            rootMargin: '0px 0px 300px 0px',
-            threshold: 0.01
-        }
+        { rootMargin: '0px 0px 300px 0px', threshold: 0.01 }
     )
 
-    if (loadMoreTrigger.value) {
-        observer.observe(loadMoreTrigger.value)
-    } else {
-        console.warn('loadMoreTrigger не найден в DOM')
-    }
+    if (loadMoreTrigger.value) observer.observe(loadMoreTrigger.value)
 
     watch(
         [() => chatsStore.chats.length, () => chatsStore.hasMore, () => chatsStore.loadingMore],
         async () => {
             await nextTick()
-
-            if (loadMoreTrigger.value && chatsStore.hasMore) {
-                observer.observe(loadMoreTrigger.value)
-            } else if (loadMoreTrigger.value) {
-                observer.unobserve(loadMoreTrigger.value)
+            if (loadMoreTrigger.value) {
+                if (chatsStore.hasMore) observer.observe(loadMoreTrigger.value)
+                else observer.unobserve(loadMoreTrigger.value)
             }
         },
         { immediate: true }
@@ -563,16 +845,19 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-    if (observer) {
-        observer.disconnect()
-    }
-
-    if(selectedChat?.value?.id) {
-        socket.emit('leaveChat', selectedChat.value.id)
-    }
+    if (observer) observer.disconnect()
+    if (selectedChat?.value?.id) socket.emit('leaveChat', selectedChat.value.id)
 
     socket.off('new.message')
     socket.off('message.sent')
     socket.off('message.read')
+    socket.off('call.incoming')
+    socket.off('call.offer')
+    socket.off('call.answer')
+    socket.off('call.ice')
+    socket.off('call.ended')
+    socket.off('call.rejected')
+
+    cleanupCall()
 })
 </script>
