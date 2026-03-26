@@ -327,14 +327,40 @@ let pc = null
 
 const configuration = {
     iceServers: [
+        // Бесплатные STUN (для обнаружения публичного IP)
         { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+
+        // OpenRelay (твой текущий) — оставляем как запасной
         {
             urls: 'turn:openrelay.metered.ca:80',
             username: 'openrelayproject',
             credential: 'openrelayproject',
         },
+        {
+            urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+            username: 'openrelayproject',
+            credential: 'openrelayproject',
+        },
+
+        // === Добавь эти серверы (самое важное улучшение) ===
+        // ExpressTURN — хороший бесплатный лимит (до 1000 GB/мес на free плане)
+        {
+            urls: 'turn:turn.expressturn.com:3478',
+            username: 'expressturn',           // проверь актуальные credentials на сайте
+            credential: 'expressturn',         // часто меняются — зайди на https://www.expressturn.com/
+        },
+
+        // Дополнительно: freeturn.net или другие публичные (если нужно)
+        // { urls: 'turn:freeturn.net:3478', username: '...', credential: '...' },
     ],
-}
+
+    // Важные настройки для надёжности
+    iceTransportPolicy: import.meta.env.VITE_ICE_TRANSPORT_POLICY, // 'all' или 'relay' для тестов
+    bundlePolicy: 'max-bundle',
+    rtcpMuxPolicy: 'require',
+};
 
 const localStream = ref(null)
 const remoteStream = ref(null)
@@ -380,6 +406,33 @@ async function createPeerConnection() {
             pc.addTrack(track, localStream.value)
         })
     }
+
+    pc.oniceconnectionstatechange = () => {
+        console.log('ICE connection state:', pc.iceConnectionState);
+    };
+
+    pc.onicegatheringstatechange = () => {
+        console.log('ICE gathering state:', pc.iceGatheringState);
+    };
+
+// Логируем все кандидаты
+    pc.onicecandidate = (event) => {
+        if (event.candidate) {
+            console.log('New ICE candidate:', {
+                type: event.candidate.type,           // host / srflx / relay — самое важное!
+                protocol: event.candidate.protocol,
+                address: event.candidate.address,
+                port: event.candidate.port,
+                relatedAddress: event.candidate.relatedAddress,
+            });
+
+            socket.emit('call.ice', {
+                callId: callModal.value.callId,
+                candidate: event.candidate,
+                sender: myId,
+            });
+        }
+    };
 }
 
 /* =======================
